@@ -1,44 +1,101 @@
-/// Установите зависимости:
+// Установите зависимости:
 // npm install react-router-dom styled-components motion
 
-import React, { useState } from 'react';
+import React, { useState, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import styled, { createGlobalStyle } from 'styled-components';
+import styled, { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { motion, AnimatePresence } from 'motion/react';
 
-// Глобальные стили с градиентом и стеклянным эффектом
+// Темы с дополнительными цветами для рамок и советов
+const darkTheme = {
+  body: '#121212',
+  text: '#e0e0e0',
+  glassBackground: 'rgba(18, 18, 18, 0.6)',
+  glassBorder: 'rgba(255, 255, 255, 0.5)', // ярче для рамок в дневнике и обучении
+  primary: '#ffd700',
+  primaryShadow: '#ffd700aa',
+  secondary: '#3182ce',
+  secondaryLight: 'rgba(49, 130, 206, 0.25)',
+  success: '#38a169',
+  successLight: 'rgba(56, 161, 105, 0.25)',
+  warning: '#fbbf24',
+  warningLight: 'rgba(171, 145, 0, 0.3)', // тёмно-жёлтый фон для предупреждений
+  buttonBackground: 'linear-gradient(90deg, #ffb347 0%, #ffcc33 100%)',
+  buttonText: '#3a0ca3',
+  buttonShadow: 'rgba(255, 204, 51, 0.6)',
+  diaryCardBorder: 'rgba(255, 255, 255, 0.5)',
+  educationCardBorder: 'rgba(255, 255, 255, 0.5)',
+  adviceWarningBg: 'rgba(171, 145, 0, 0.3)',
+  adviceWarningText: '#fff',
+  advicePositiveBg: 'rgba(16, 185, 129, 0.25)',
+  advicePositiveText: '#e0f2f1',
+};
+
+const lightTheme = {
+  body: '#ffffff',
+  text: '#121212',
+  glassBackground: 'rgba(255, 255, 255, 0.15)',
+  glassBorder: 'rgba(0, 0, 0, 0.1)',
+  primary: '#ffd700',
+  primaryShadow: '#ffd700aa',
+  secondary: '#3182ce',
+  secondaryLight: 'rgba(49, 130, 206, 0.25)',
+  success: '#38a169',
+  successLight: 'rgba(56, 161, 105, 0.25)',
+  warning: '#fbbf24',
+  warningLight: '#fef3c7',
+  buttonBackground: 'linear-gradient(90deg, #ffb347 0%, #ffcc33 100%)',
+  buttonText: '#3a0ca3',
+  buttonShadow: 'rgba(255, 204, 51, 0.6)',
+  diaryCardBorder: 'rgba(0, 0, 0, 0.1)',
+  educationCardBorder: 'rgba(0, 0, 0, 0.1)',
+  adviceWarningBg: '#fef3c7',
+  adviceWarningText: '#92400e',
+  advicePositiveBg: '#d1fae5',
+  advicePositiveText: '#065f46',
+};
+
+// Контекст темы
+const ThemeToggleContext = createContext();
+export const useTheme = () => useContext(ThemeToggleContext);
+
+// Глобальные стили
 const GlobalStyle = createGlobalStyle`
   body {
     margin: 0; padding: 0;
+    background: ${({ theme }) => theme.body};
+    color: ${({ theme }) => theme.text};
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #333333;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+  a {
+    color: ${({ theme }) => theme.text};
   }
 `;
 
-// Контейнер с эффектом стекла (glassmorphism)
+// Стили компонентов
 const Container = styled.div`
   max-width: 720px;
   margin: 40px auto;
   padding: 30px 40px;
-  background: rgba(255, 255, 255, 0.15);
+  background: ${({ theme }) => theme.glassBackground};
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid ${({ theme }) => theme.glassBorder};
+  color: ${({ theme }) => theme.text};
 `;
 
-// Навигация с плавным эффектом
 const Nav = styled.nav`
   display: flex;
   justify-content: space-around;
   margin-bottom: 30px;
   a {
     text-decoration: none;
-    color: rgba(255, 255, 255, 0.7);
+    color: ${({ theme }) => theme.text};
     font-weight: 700;
     font-size: 18px;
     padding-bottom: 6px;
@@ -46,59 +103,56 @@ const Nav = styled.nav`
     border-bottom: 3px solid transparent;
 
     &.active {
-      color: #fff;
-      border-bottom: 3px solid #ffd700;
-      box-shadow: 0 2px 8px #ffd700aa;
+      color: ${({ theme }) => theme.primary};
+      border-bottom: 3px solid ${({ theme }) => theme.primary};
+      box-shadow: 0 2px 8px ${({ theme }) => theme.primaryShadow};
       border-radius: 4px;
     }
 
     &:hover:not(.active) {
-      color: #d1c4e9;
+      color: ${({ theme }) => theme.secondary};
     }
   }
 `;
 
-// Кнопка с градиентом и тенью
 const Button = styled.button`
-  background: linear-gradient(90deg, #ffb347 0%, #ffcc33 100%);
-  color: #3a0ca3;
+  background: ${({ theme }) => theme.buttonBackground};
+  color: ${({ theme }) => theme.buttonText};
   border: none;
   padding: 10px 22px;
   border-radius: 30px;
   cursor: pointer;
   font-weight: 700;
   font-size: 15px;
-  box-shadow: 0 4px 14px rgba(255, 204, 51, 0.6);
+  box-shadow: 0 4px 14px ${({ theme }) => theme.buttonShadow};
   transition: background 0.3s ease;
 
   &:hover {
-    background: linear-gradient(90deg, #ffcc33 0%, #ffb347 100%);
+    filter: brightness(1.1);
   }
 
   &:disabled {
-    background: #bbb;
+    background: #555;
     cursor: not-allowed;
     box-shadow: none;
   }
 `;
 
-// Заголовок страницы
 const PageTitle = styled.h2`
-  color: #fff;
+  color: ${({ theme }) => theme.text};
   margin-bottom: 15px;
   text-shadow: 0 2px 8px rgba(0,0,0,0.3);
 `;
 
-// --- Финансовый дневник ---
 const EventCard = styled(motion.div)`
-  background: rgba(255, 255, 255, 0.25);
+  background: ${({ theme }) => theme.glassBackground};
+  border: 1.5px solid ${({ theme }) => theme.diaryCardBorder};
   padding: 18px 24px;
   border-radius: 16px;
   margin-bottom: 14px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.3);
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.text};
   font-weight: 600;
   display: flex;
   justify-content: space-between;
@@ -116,34 +170,34 @@ const Select = styled.select`
   padding: 8px 14px;
   border-radius: 12px;
   border: none;
-  background: rgba(255,255,255,0.3);
-  color: #1a1a1a;
+  background: ${({ theme }) => theme.glassBackground};
+  color: ${({ theme }) => theme.text};
   font-weight: 600;
   box-shadow: inset 0 0 8px rgba(0,0,0,0.1);
   transition: background 0.3s ease;
 
   &:focus {
     outline: none;
-    background: rgba(255,255,255,0.5);
+    background: ${({ theme }) => theme.primary};
+    color: #000;
   }
 `;
 
-// --- Достижения ---
 const AchievementCard = styled(motion.div)`
-  background: ${(props) => (props.completed ? 'rgba(56, 161, 105, 0.25)' : 'rgba(49, 130, 206, 0.25)')};
-  border-left: 8px solid ${(props) => (props.completed ? '#38a169' : '#3182ce')};
+  background: ${({ completed, theme }) => completed ? theme.successLight : theme.secondaryLight};
+  border-left: 8px solid ${({ completed, theme }) => completed ? theme.success : theme.secondary};
   padding: 20px 24px;
   border-radius: 20px;
   margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.text};
   box-shadow: 0 6px 20px rgba(0,0,0,0.1);
 `;
 
 const ProgressBarContainer = styled.div`
-  background: rgba(255, 255, 255, 0.3);
+  background: ${({ theme }) => theme.glassBackground};
   border-radius: 20px;
   overflow: hidden;
   height: 18px;
@@ -153,31 +207,102 @@ const ProgressBarContainer = styled.div`
 `;
 
 const ProgressBarFill = styled.div`
-  background: #ffd700;
+  background: ${({ theme }) => theme.primary};
   height: 100%;
-  width: ${(props) => props.percent}%;
+  width: ${({ percent }) => percent}%;
   transition: width 0.6s ease;
   border-radius: 20px 0 0 20px;
 `;
 
-// --- Образовательный центр ---
 const LessonCard = styled(motion.div)`
-  background: rgba(255, 255, 255, 0.3);
+  background: ${({ theme }) => theme.glassBackground};
+  border: 1.5px solid ${({ theme }) => theme.educationCardBorder};
   padding: 20px 24px;
   border-radius: 20px;
   margin-bottom: 16px;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-  color: #1a1a1a;
+  color: ${({ theme }) => theme.text};
   font-weight: 600;
   user-select: none;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.5);
+    background: ${({ theme }) => theme.primary};
+    color: #000;
   }
 `;
 
-// --- Компоненты страниц ---
+const JourneyContainer = styled.div`
+  background: ${({ theme }) => theme.glassBackground};
+  border-radius: 20px;
+  padding: 20px 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid ${({ theme }) => theme.glassBorder};
+  color: ${({ theme }) => theme.text};
+`;
+
+const Map = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+const Stop = styled.div`
+  position: relative;
+  text-align: center;
+  width: 100px;
+  color: ${({ completed, theme }) => completed ? theme.success : theme.secondary};
+  font-weight: ${({ completed }) => completed ? '700' : '400'};
+  user-select: none;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -50px;
+    width: 50px;
+    height: 6px;
+    background: ${({ completed, theme }) => completed ? theme.success : theme.secondaryLight};
+    z-index: -1;
+    border-radius: 3px;
+    transform: translateY(-50%);
+  }
+
+  &:last-child::after {
+    content: none;
+  }
+`;
+
+const Emoji = styled.div`
+  font-size: 32px;
+  margin-bottom: 6px;
+`;
+
+const AdviceCard = styled.div`
+  background: ${({ type, theme }) =>
+    type === 'warning' ? theme.adviceWarningBg : theme.advicePositiveBg};
+  color: ${({ type, theme }) =>
+    type === 'warning' ? theme.adviceWarningText : theme.advicePositiveText};
+  border-left: 6px solid
+    ${({ type, theme }) => (type === 'warning' ? theme.warning : theme.success)};
+  padding: 15px 20px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+  font-weight: 600;
+`;
+
+// Заголовок с динамическим цветом для Прогресс и советы
+const SectionHeader = styled.h3`
+  margin-bottom: 20px;
+  color: ${({ theme }) => (theme.body === '#ffffff' ? '#121212' : '#fff')};
+  text-shadow: ${({ theme }) =>
+    theme.body === '#ffffff' ? 'none' : '0 2px 8px rgba(0,0,0,0.5)'};
+`;
+
+// --- Страницы ---
 
 function Diary() {
   const [events] = useState([
@@ -193,7 +318,7 @@ function Diary() {
   return (
     <>
       <PageTitle>Финансовый дневник</PageTitle>
-      <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '20px' }}>
+      <p style={{ marginBottom: '20px' }}>
         Отслеживайте расходы и доходы, чтобы лучше понимать свои финансы.
       </p>
       <FilterBar>
@@ -207,7 +332,7 @@ function Diary() {
       </FilterBar>
       <AnimatePresence>
         {filteredEvents.length === 0 && (
-          <p style={{ color: 'rgba(255,255,255,0.7)' }}>Нет событий в выбранной категории.</p>
+          <p>Нет событий в выбранной категории.</p>
         )}
         {filteredEvents.map((event, i) => (
           <EventCard
@@ -221,7 +346,7 @@ function Diary() {
             <div>
               <strong>{event.date}:</strong> {event.description}
             </div>
-            <em style={{ fontStyle: 'normal', color: '#555' }}>{event.category}</em>
+            <em style={{ fontStyle: 'normal', color: '#bbb' }}>{event.category}</em>
           </EventCard>
         ))}
       </AnimatePresence>
@@ -237,7 +362,7 @@ function Achievements() {
       completed: true,
       claimed: false,
       progress: 100,
-      description: 'Отложите 10% от вашего дохода за месяц и получите награду.',
+      description: 'Отложите 10% от вашего дохода за месяц и получите награду',
     },
     {
       id: 2,
@@ -245,7 +370,7 @@ function Achievements() {
       completed: false,
       claimed: false,
       progress: 45,
-      description: 'Сократите импульсивные траты и улучшите финансовую дисциплину.',
+      description: 'Сократите импульсивные траты и улучшите финансовую дисциплину',
     },
     {
       id: 3,
@@ -253,7 +378,7 @@ function Achievements() {
       completed: false,
       claimed: false,
       progress: 60,
-      description: 'Поставьте цель и двигайтесь к ней шаг за шагом.',
+      description: 'Поставьте цель и двигайтесь к ней шаг за шагом',
     },
   ]);
 
@@ -268,7 +393,7 @@ function Achievements() {
   return (
     <>
       <PageTitle>Достижения</PageTitle>
-      <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '20px' }}>
+      <p style={{ marginBottom: '20px' }}>
         Мотивируйте себя и формируйте полезные финансовые привычки.
       </p>
       <AnimatePresence>
@@ -284,7 +409,7 @@ function Achievements() {
           >
             <div>
               <strong>{ach.title}</strong>
-              <p style={{ margin: '6px 0', color: '#444' }}>{ach.description}</p>
+              <p style={{ margin: '6px 0', color: '#888' }}>{ach.description}</p>
               <ProgressBarContainer aria-label={`Прогресс: ${ach.progress}%`}>
                 <ProgressBarFill percent={ach.progress} />
               </ProgressBarContainer>
@@ -292,12 +417,12 @@ function Achievements() {
             <div>
               {ach.completed ? (
                 ach.claimed ? (
-                  <span style={{ color: '#38a169', fontWeight: '700' }}>Награда получена</span>
+                  <span style={{ color: darkTheme.success, fontWeight: '700' }}>Награда получена</span>
                 ) : (
                   <Button onClick={() => handleClaimReward(ach.id)}>Получить награду</Button>
                 )
               ) : (
-                <span style={{ color: '#a0aec0', fontWeight: '700' }}>В процессе</span>
+                <span style={{ color: '#888', fontWeight: '700' }}>В процессе</span>
               )}
             </div>
           </AchievementCard>
@@ -341,7 +466,7 @@ function Education() {
   return (
     <>
       <PageTitle>Образовательный центр</PageTitle>
-      <p style={{ color: 'rgba(255,255,255,0.85)', marginBottom: '20px' }}>
+      <p style={{ marginBottom: '20px' }}>
         Узнайте, как искусственный интеллект помогает поколению Z управлять финансами.
       </p>
       {lessons.map((lesson) => (
@@ -369,7 +494,7 @@ function Education() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                style={{ marginTop: '10px', overflow: 'hidden', color: '#222' }}
+                style={{ marginTop: '10px', overflow: 'hidden', color: '#bbb' }}
               >
                 {lesson.content}
               </motion.p>
@@ -381,28 +506,99 @@ function Education() {
   );
 }
 
-// --- Основное приложение ---
-export default function App() {
+function ProgressAndAdvice() {
+  const goals = [
+    { id: 1, title: 'Накопить на гаджет', completed: true },
+    { id: 2, title: 'Создать подушку безопасности', completed: false },
+    { id: 3, title: 'Начать инвестировать', completed: false },
+  ];
+
+  const adviceList = [
+    { id: 1, type: 'positive', text: 'Вы уже накопили 50% от цели "Накопить на гаджет". Отличный прогресс!' },
+    { id: 2, type: 'warning', text: 'Вы часто тратите на кафе. Попробуйте готовить дома — это поможет сэкономить.' },
+    { id: 3, type: 'positive', text: 'Рекомендуем открыть накопительный счёт с повышенным процентом.' },
+  ];
+
   return (
-    <>
-      <GlobalStyle />
-      <Router>
-        <Container>
-          <h1 style={{ color: '#fff', textAlign: 'center', marginBottom: '40px', textShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
-            Z-aналитика
-          </h1>
-          <Nav>
-            <NavLink to="/" end>Дневник</NavLink>
-            <NavLink to="/achievements">Достижения</NavLink>
-            <NavLink to="/education">Обучение</NavLink>
-          </Nav>
-          <Routes>
-            <Route path="/" element={<Diary />} />
-            <Route path="/achievements" element={<Achievements />} />
-            <Route path="/education" element={<Education />} />
-          </Routes>
-        </Container>
-      </Router>
-    </>
+    <JourneyContainer aria-label="Визуальное отображение прогресса и персонализированные советы">
+      <SectionHeader>Ваш финансовый путь</SectionHeader>
+      <Map>
+        {goals.map((goal) => (
+          <Stop key={goal.id} completed={goal.completed} tabIndex={0} aria-label={`${goal.title} ${goal.completed ? 'достигнута' : 'не достигнута'}`}>
+            <Emoji>{goal.completed ? '🏆' : '⏳'}</Emoji>
+            <div>{goal.title}</div>
+          </Stop>
+        ))}
+      </Map>
+
+      <SectionHeader>Персонализированные советы</SectionHeader>
+      {adviceList.map(advice => (
+        <AdviceCard key={advice.id} type={advice.type} tabIndex={0} role="article" aria-label={`Совет: ${advice.text}`}>
+          {advice.text}
+        </AdviceCard>
+      ))}
+    </JourneyContainer>
   );
 }
+
+// Переключатель темы
+const ThemeToggleButton = styled.button`
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: ${({ theme }) => theme.buttonBackground};
+  color: ${({ theme }) => theme.buttonText};
+  border: none;
+  padding: 10px 18px;
+  border-radius: 30px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px ${({ theme }) => theme.buttonShadow};
+  transition: background 0.3s ease;
+  z-index: 1000;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+`;
+
+// Основное приложение
+export default function App() {
+  const [theme, setTheme] = useState(darkTheme);
+
+  const toggleTheme = () => {
+    setTheme(theme === darkTheme ? lightTheme : darkTheme);
+  };
+
+  return (
+    <ThemeToggleContext.Provider value={{ theme, toggleTheme }}>
+      <ThemeProvider theme={theme}>
+        <GlobalStyle />
+        <Router>
+          <ThemeToggleButton onClick={toggleTheme} aria-label="Переключить тему">
+            {theme === darkTheme ? 'Светлая тема' : 'Тёмная тема'}
+          </ThemeToggleButton>
+          <Container>
+            <h1 style={{ color: theme.text, textAlign: 'center', marginBottom: '40px', textShadow: theme.body === '#121212' ? '0 2px 8px rgba(0,0,0,0.4)' : 'none' }}>
+              Z-aналитика
+            </h1>
+            <Nav>
+              <NavLink to="/" end>Дневник</NavLink>
+              <NavLink to="/achievements">Достижения</NavLink>
+              <NavLink to="/education">Обучение</NavLink>
+              <NavLink to="/progress">Прогресс и советы</NavLink>
+            </Nav>
+            <Routes>
+              <Route path="/" element={<Diary />} />
+              <Route path="/achievements" element={<Achievements />} />
+              <Route path="/education" element={<Education />} />
+              <Route path="/progress" element={<ProgressAndAdvice />} />
+            </Routes>
+          </Container>
+        </Router>
+      </ThemeProvider>
+    </ThemeToggleContext.Provider>
+  );
+}
+
+
